@@ -73,17 +73,21 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.hosts_worker = None  # 保存线程引用，用于清理
-        self.init_ui()
-        # 延迟更新状态栏，让窗口先显示，提升启动速度
-        # 分阶段更新：先显示窗口，再异步更新状态
-        QTimer.singleShot(50, self.update_status_quick)  # 快速更新（不阻塞）
-        QTimer.singleShot(500, self.update_status_async)  # 异步更新（后台线程）
-    
-    def init_ui(self):
-        """初始化UI"""
+        
+        # 设置基本窗口属性
         self.setWindowTitle("千图网问题解决工具 V0.0.1")
         self.setMinimumSize(1000, 700)
         
+        # 立即初始化UI（但状态更新延后）
+        self.init_ui()
+        
+        # 延迟更新状态栏，让窗口先显示，提升启动速度
+        # 分阶段更新：先显示窗口，再异步更新状态
+        QTimer.singleShot(200, self.update_status_quick)  # 快速更新（延迟200ms，不阻塞）
+        QTimer.singleShot(1500, self.update_status_async)  # 异步更新（后台线程，延迟更久）
+    
+    def init_ui(self):
+        """初始化UI"""
         # 创建中央部件
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -112,29 +116,15 @@ class MainWindow(QMainWindow):
         problems_label.setStyleSheet("color: #1a1a1a; margin-bottom: 8px;")  # 深色文字，提高对比度
         main_layout.addWidget(problems_label)
         
-        # 问题卡片网格
+        # 问题卡片网格（延迟创建，避免阻塞启动）
         cards_layout = QGridLayout()
         cards_layout.setSpacing(12)  # 减少卡片间距
         
-        problem_types = ['preview', 'js', 'icon', 'download', 'cloud', 'unbind_preview', 'main_site', 'safari_cache']
-        row = 0
-        col = 0
-        for problem_type in problem_types:
-            problem_info = PROBLEMS.get(problem_type, {})
-            card = ProblemCard(
-                problem_type=problem_type,
-                title=problem_info.get('title', ''),
-                description=problem_info.get('description', '')
-            )
-            card.fix_clicked.connect(self.on_problem_fix_clicked)
-            cards_layout.addWidget(card, row, col)
-            
-            col += 1
-            if col >= 3:
-                col = 0
-                row += 1
-        
+        # 先添加布局，卡片延迟创建
         main_layout.addLayout(cards_layout)
+        
+        # 延迟创建卡片，让窗口先显示
+        QTimer.singleShot(50, lambda: self._create_problem_cards(cards_layout))
         
         # 工具箱
         tools_label = QLabel("🔧 工具箱")
@@ -216,6 +206,26 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(status_widget)
         
         central_widget.setLayout(main_layout)
+    
+    def _create_problem_cards(self, cards_layout: QGridLayout):
+        """延迟创建问题卡片（在窗口显示后进行）"""
+        problem_types = ['preview', 'js', 'icon', 'download', 'cloud', 'unbind_preview', 'main_site', 'safari_cache']
+        row = 0
+        col = 0
+        for problem_type in problem_types:
+            problem_info = PROBLEMS.get(problem_type, {})
+            card = ProblemCard(
+                problem_type=problem_type,
+                title=problem_info.get('title', ''),
+                description=problem_info.get('description', '')
+            )
+            card.fix_clicked.connect(self.on_problem_fix_clicked)
+            cards_layout.addWidget(card, row, col)
+            
+            col += 1
+            if col >= 3:
+                col = 0
+                row += 1
     
     def update_status_quick(self):
         """快速更新状态栏（同步操作，不阻塞）"""

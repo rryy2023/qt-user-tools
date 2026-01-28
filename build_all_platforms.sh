@@ -207,12 +207,18 @@ build_mac_arm64() {
     
     # 使用 PyInstaller 打包
     echo -e "${BLUE}正在打包...${NC}"
+    echo -e "${YELLOW}Python: $PYTHON_BIN${NC}"
+    echo -e "${YELLOW}工作目录: $BUILD_SUBDIR${NC}"
+    echo -e "${YELLOW}输出目录: $DIST_DIR/mac_arm64${NC}"
+    
     if ! $PYTHON_BIN -m PyInstaller build_app.spec \
         --workpath "$BUILD_SUBDIR" \
         --distpath "$DIST_DIR/mac_arm64" \
         --clean \
-        --noconfirm; then
+        --noconfirm 2>&1 | tee /tmp/pyinstaller_arm64.log; then
         echo -e "${RED}✗ PyInstaller 打包失败${NC}"
+        echo -e "${YELLOW}最后 50 行日志:${NC}"
+        tail -50 /tmp/pyinstaller_arm64.log || true
         return 1
     fi
     
@@ -349,12 +355,18 @@ build_mac_intel() {
     
     # 使用 PyInstaller 打包
     echo -e "${BLUE}正在打包...${NC}"
+    echo -e "${YELLOW}Python: $PYTHON_BIN${NC}"
+    echo -e "${YELLOW}工作目录: $BUILD_SUBDIR${NC}"
+    echo -e "${YELLOW}输出目录: $DIST_DIR/mac_intel${NC}"
+    
     if ! $PYTHON_BIN -m PyInstaller build_app.spec \
         --workpath "$BUILD_SUBDIR" \
         --distpath "$DIST_DIR/mac_intel" \
         --clean \
-        --noconfirm; then
+        --noconfirm 2>&1 | tee /tmp/pyinstaller_intel.log; then
         echo -e "${RED}✗ PyInstaller 打包失败${NC}"
+        echo -e "${YELLOW}最后 50 行日志:${NC}"
+        tail -50 /tmp/pyinstaller_intel.log || true
         return 1
     fi
     

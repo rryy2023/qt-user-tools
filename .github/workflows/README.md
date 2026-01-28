@@ -4,12 +4,10 @@
 
 ### 工作流文件
 
-1. **`build-all-platforms.yml`** - 三平台自动打包（推荐）
+**`build-all-platforms.yml`** - 三平台自动打包
    - macOS ARM64
    - macOS Intel
    - Windows EXE
-
-2. **`build-windows.yml`** - 仅 Windows 打包（保留用于单独测试）
 
 ### 触发条件
 

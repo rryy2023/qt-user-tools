@@ -49,22 +49,35 @@ jobs:
       - name: Build macOS ARM64
         run: |
           chmod +x build_all_platforms.sh
-          ./build_all_platforms.sh --mac-arm64 || exit 1
+          # 显示详细输出以便调试
+          set -x
+          ./build_all_platforms.sh --mac-arm64 || {
+            echo "Build failed, checking dist directory..."
+            ls -la dist/ || true
+            ls -la dist/mac_arm64/ || true
+            exit 1
+          }
       
       - name: Verify build output
         run: |
+          echo "Checking build output..."
           if [ ! -d "dist/mac_arm64" ]; then
             echo "Error: dist/mac_arm64 directory not found"
+            echo "Contents of dist/:"
+            ls -la dist/ || true
             exit 1
           fi
+          echo "Contents of dist/mac_arm64/:"
           ls -la dist/mac_arm64/ || exit 1
           # 检查是否有构建产物
           if [ -d "dist/mac_arm64/千图网问题解决工具.app" ] || \
-             [ -n "$(find dist/mac_arm64 -name '*.app' -o -name '*.dmg' -o -name '*.zip' 2>/dev/null)" ]; then
-            echo "✓ Build artifacts found"
-            find dist/mac_arm64 -type f -o -type d | head -10
+             [ -n "$(find dist/mac_arm64 -name '*.app' -o -name '*.dmg' -o -name '*.zip' 2>/dev/null | head -1)" ]; then
+            echo "✓ Build artifacts found:"
+            find dist/mac_arm64 \( -name '*.app' -o -name '*.dmg' -o -name '*.zip' \) 2>/dev/null | head -10
           else
             echo "Error: No build artifacts found in dist/mac_arm64/"
+            echo "Directory contents:"
+            find dist/mac_arm64 -type f -o -type d | head -20
             exit 1
           fi
       
@@ -86,6 +99,43 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Install system dependencies
+        run: |
+          brew install gettext || true
+          # 查找 gettext 库的实际路径（尝试多个可能的位置）
+          GETTEXT_PATH=""
+          for path in "$(brew --prefix gettext 2>/dev/null)" "/opt/homebrew/opt/gettext" "/usr/local/opt/gettext"; do
+            if [ -n "$path" ] && [ -d "$path/lib" ] && [ -f "$path/lib/libintl.8.dylib" ] || [ -f "$path/lib/libintl.dylib" ]; then
+              GETTEXT_PATH="$path"
+              break
+            fi
+          done
+          
+          if [ -z "$GETTEXT_PATH" ]; then
+            # 如果找不到，尝试查找任何包含 libintl 的路径
+            GETTEXT_PATH=$(find /opt/homebrew /usr/local -name "libintl*.dylib" 2>/dev/null | head -1 | xargs dirname | xargs dirname | xargs dirname || echo "")
+          fi
+          
+          if [ -z "$GETTEXT_PATH" ]; then
+            echo "Warning: Could not find gettext library path"
+            GETTEXT_PATH="/usr/local/opt/gettext"
+          fi
+          
+          echo "GETTEXT_PATH=$GETTEXT_PATH" >> $GITHUB_ENV
+          echo "Found gettext at: $GETTEXT_PATH"
+          ls -la "$GETTEXT_PATH/lib/"*intl* 2>/dev/null || echo "No libintl found in $GETTEXT_PATH/lib/"
+          
+          # 设置环境变量
+          if [ -d "$GETTEXT_PATH/lib" ]; then
+            echo "DYLD_LIBRARY_PATH=$GETTEXT_PATH/lib:$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
+          fi
+          
+          # 创建符号链接（如果需要，但可能没有权限）
+          if [ ! -f "/usr/local/opt/gettext/lib/libintl.8.dylib" ] && [ -f "$GETTEXT_PATH/lib/libintl.8.dylib" ]; then
+            sudo mkdir -p /usr/local/opt/gettext/lib 2>/dev/null || true
+            sudo ln -sf "$GETTEXT_PATH/lib/libintl.8.dylib" /usr/local/opt/gettext/lib/libintl.8.dylib 2>/dev/null || true
+          fi
+      
       - name: Set up Python (x86_64)
         uses: actions/setup-python@v5
         with:
@@ -100,42 +150,64 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-intel-pip-
       
-      - name: Install system dependencies
-        run: |
-          brew install gettext || true
-          # 确保 gettext 库可用
-          export PATH="/usr/local/opt/gettext/bin:$PATH"
-          export LDFLAGS="-L/usr/local/opt/gettext/lib $LDFLAGS"
-          export CPPFLAGS="-I/usr/local/opt/gettext/include $CPPFLAGS"
-      
       - name: Install dependencies
+        env:
+          DYLD_LIBRARY_PATH: ${{ env.DYLD_LIBRARY_PATH }}
+          GETTEXT_PATH: ${{ env.GETTEXT_PATH }}
         run: |
+          # 设置库路径
+          if [ -n "$GETTEXT_PATH" ]; then
+            export DYLD_LIBRARY_PATH="$GETTEXT_PATH/lib:$DYLD_LIBRARY_PATH"
+            export PATH="$GETTEXT_PATH/bin:$PATH"
+            export LDFLAGS="-L$GETTEXT_PATH/lib $LDFLAGS"
+            export CPPFLAGS="-I$GETTEXT_PATH/include $CPPFLAGS"
+          fi
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
       
       - name: Build macOS Intel
+        env:
+          DYLD_LIBRARY_PATH: ${{ env.DYLD_LIBRARY_PATH }}
+          GETTEXT_PATH: ${{ env.GETTEXT_PATH }}
         run: |
           chmod +x build_all_platforms.sh
-          export PATH="/usr/local/opt/gettext/bin:$PATH"
-          export LDFLAGS="-L/usr/local/opt/gettext/lib $LDFLAGS"
-          export CPPFLAGS="-I/usr/local/opt/gettext/include $CPPFLAGS"
-          ./build_all_platforms.sh --mac-intel || exit 1
+          # 设置库路径
+          if [ -n "$GETTEXT_PATH" ]; then
+            export PATH="$GETTEXT_PATH/bin:$PATH"
+            export LDFLAGS="-L$GETTEXT_PATH/lib $LDFLAGS"
+            export CPPFLAGS="-I$GETTEXT_PATH/include $CPPFLAGS"
+            export DYLD_LIBRARY_PATH="$GETTEXT_PATH/lib:$DYLD_LIBRARY_PATH"
+          fi
+          # 显示详细输出以便调试
+          set -x
+          ./build_all_platforms.sh --mac-intel || {
+            echo "Build failed, checking dist directory..."
+            ls -la dist/ || true
+            ls -la dist/mac_intel/ || true
+            exit 1
+          }
       
       - name: Verify build output
         run: |
+          echo "Checking build output..."
           if [ ! -d "dist/mac_intel" ]; then
             echo "Error: dist/mac_intel directory not found"
+            echo "Contents of dist/:"
+            ls -la dist/ || true
             exit 1
           fi
+          echo "Contents of dist/mac_intel/:"
           ls -la dist/mac_intel/ || exit 1
           # 检查是否有构建产物
           if [ -d "dist/mac_intel/千图网问题解决工具.app" ] || \
-             [ -n "$(find dist/mac_intel -name '*.app' -o -name '*.dmg' -o -name '*.zip' 2>/dev/null)" ]; then
-            echo "✓ Build artifacts found"
-            find dist/mac_intel -type f -o -type d | head -10
+             [ -n "$(find dist/mac_intel -name '*.app' -o -name '*.dmg' -o -name '*.zip' 2>/dev/null | head -1)" ]; then
+            echo "✓ Build artifacts found:"
+            find dist/mac_intel \( -name '*.app' -o -name '*.dmg' -o -name '*.zip' \) 2>/dev/null | head -10
           else
             echo "Error: No build artifacts found in dist/mac_intel/"
+            echo "Directory contents:"
+            find dist/mac_intel -type f -o -type d | head -20
             exit 1
           fi
       
@@ -179,21 +251,33 @@ jobs:
       
       - name: Build Windows EXE
         run: |
-          python build_windows.py || exit 1
+          # 显示详细输出以便调试
+          python build_windows.py || {
+            echo "Build failed, checking dist directory..."
+            ls -la dist/ || true
+            ls -la dist/windows/ || true
+            exit 1
+          }
       
       - name: Verify build output
         run: |
+          echo "Checking build output..."
           if [ ! -d "dist/windows" ]; then
             echo "Error: dist/windows directory not found"
+            echo "Contents of dist/:"
+            ls -la dist/ || true
             exit 1
           fi
+          echo "Contents of dist/windows/:"
           ls -la dist/windows/ || exit 1
           # 检查是否有构建产物
-          if [ -n "$(find dist/windows -name '*.exe' -o -name '*.zip' 2>/dev/null)" ]; then
-            echo "✓ Build artifacts found"
-            find dist/windows -type f | head -10
+          if [ -n "$(find dist/windows -name '*.exe' -o -name '*.zip' 2>/dev/null | head -1)" ]; then
+            echo "✓ Build artifacts found:"
+            find dist/windows \( -name '*.exe' -o -name '*.zip' \) 2>/dev/null | head -10
           else
             echo "Error: No build artifacts found in dist/windows/"
+            echo "Directory contents:"
+            find dist/windows -type f -o -type d | head -20
             exit 1
           fi
       

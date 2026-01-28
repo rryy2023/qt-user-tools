@@ -114,7 +114,7 @@ class ProblemCard(QWidget):
                 color: #000000;
             }}
             ProblemCard QPushButton {{
-                background-color: #1890ff;
+                background-color: #69c0ff;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -123,10 +123,10 @@ class ProblemCard(QWidget):
                 font-size: 11px;
             }}
             ProblemCard QPushButton:hover {{
-                background-color: #40a9ff;
+                background-color: #91d5ff;
             }}
             ProblemCard QPushButton:pressed {{
-                background-color: #096dd9;
+                background-color: #40a9ff;
             }}
         """)
         

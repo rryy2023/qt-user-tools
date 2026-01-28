@@ -10,7 +10,7 @@ import sys
 import platform
 
 from PyQt6.QtWidgets import QApplication, QMessageBox
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QIcon
 
 # 添加路径
@@ -161,25 +161,26 @@ def main():
     # 设置样式
     app.setStyle('Fusion')
     
-    # 加载样式表（优化：使用缓存，避免重复读取）
-    try:
-        stylesheet_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            'resources', 'styles.qss'
-        )
-        if os.path.exists(stylesheet_path):
-            # 使用更快的读取方式
-            with open(stylesheet_path, 'r', encoding='utf-8', errors='ignore') as f:
-                stylesheet = f.read()
-                app.setStyleSheet(stylesheet)
-    except Exception as e:
-        print(f"加载样式表失败: {e}")
-    
-    # 不再在启动时检查权限（类似SwitchHosts!）
-    # 权限检查将在需要修改hosts文件时进行，并提示用户输入密码
-    
-    # 创建主窗口
+    # 创建主窗口（先创建，再加载样式表，避免阻塞）
     main_window = MainWindow()
+    
+    # 延迟加载样式表，让窗口先显示
+    def load_stylesheet():
+        try:
+            stylesheet_path = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                'resources', 'styles.qss'
+            )
+            if os.path.exists(stylesheet_path):
+                # 使用更快的读取方式
+                with open(stylesheet_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    stylesheet = f.read()
+                    app.setStyleSheet(stylesheet)
+        except Exception as e:
+            print(f"加载样式表失败: {e}")
+    
+    # 延迟加载样式表（窗口显示后）
+    QTimer.singleShot(100, load_stylesheet)
     
     # 连接信号
     def on_problem_fix(problem_type: str):
@@ -202,8 +203,11 @@ def main():
     main_window.tool_requested.connect(on_tool_request)
     main_window.info_collect_requested.connect(on_info_collect)
     
-    # 显示主窗口
+    # 立即显示主窗口（此时UI可能还在初始化，但窗口框架已显示）
     main_window.show()
+    
+    # 处理事件循环，确保窗口能立即显示
+    app.processEvents()
     
     # 运行应用
     sys.exit(app.exec())

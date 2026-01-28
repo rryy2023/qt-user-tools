@@ -150,8 +150,7 @@ git push origin v0.0.2
 
 ## 📝 相关文件
 
-- `.github/workflows/build-all-platforms.yml` - 多平台工作流
-- `.github/workflows/build-windows.yml` - Windows 单独工作流（保留）
+- `.github/workflows/build-all-platforms.yml` - 多平台工作流（包含所有平台）
 - `build_all_platforms.sh` - 本地打包脚本
 
 ## 🎉 总结

@@ -33,11 +33,8 @@
 ### 手动触发
 
 ```bash
-# 使用脚本
-./trigger_windows_build.sh
-
-# 或使用 GitHub CLI
-gh workflow run "Build Windows EXE"
+# 使用 GitHub CLI
+gh workflow run "Build All Platforms"
 ```
 
 ## 📦 输出文件

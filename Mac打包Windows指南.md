@@ -18,7 +18,7 @@
 
 ### 步骤 1：设置 GitHub Actions
 
-工作流文件已创建：`.github/workflows/build-windows.yml`
+工作流文件已创建：`.github/workflows/build-all-platforms.yml`（包含 Windows 构建）
 
 ### 步骤 2：推送代码到 GitHub
 
@@ -52,7 +52,7 @@ git push origin v0.0.1
 
 1. 在 GitHub 网页上：
    - 进入 `Actions` 标签
-   - 选择 `Build Windows EXE` 工作流
+   - 选择 `Build All Platforms` 工作流
    - 点击 `Run workflow`
 
 2. 使用 GitHub CLI（在 Mac 上）：
@@ -65,14 +65,7 @@ brew install gh
 gh auth login
 
 # 触发工作流
-./trigger_windows_build.sh
-```
-
-#### 方法 3：使用脚本
-
-```bash
-chmod +x trigger_windows_build.sh
-./trigger_windows_build.sh
+gh workflow run "Build All Platforms"
 ```
 
 ### 步骤 4：下载构建产物
@@ -87,7 +80,7 @@ chmod +x trigger_windows_build.sh
 
 ```bash
 # 查看运行列表
-gh run list --workflow="Build Windows EXE"
+gh run list --workflow="Build All Platforms"
 
 # 下载最新构建
 gh run download --name windows-exe
@@ -185,7 +178,7 @@ git push origin v0.0.2
 
 ```bash
 # 查看工作流运行列表
-gh run list --workflow="Build Windows EXE"
+gh run list --workflow="Build All Platforms"
 
 # 查看最新运行状态
 gh run watch
@@ -205,7 +198,7 @@ gh run view <run-id> --log
 ### 问题 1：工作流未触发
 
 **检查**：
-- 确保 `.github/workflows/build-windows.yml` 存在
+- 确保 `.github/workflows/build-all-platforms.yml` 存在
 - 检查触发条件是否满足
 - 查看 GitHub 仓库设置中的 Actions 权限
 
@@ -238,9 +231,8 @@ gh run view <run-id> --log
 
 ## 🔗 相关文件
 
-- `.github/workflows/build-windows.yml` - GitHub Actions 工作流
+- `.github/workflows/build-all-platforms.yml` - 多平台 GitHub Actions 工作流（包含 Windows）
 - `build_windows_ci.py` - CI/CD 优化的打包脚本
-- `trigger_windows_build.sh` - 本地触发脚本
 - `build_windows.py` - 原始打包脚本（Windows 本地使用）
 
 ## 🎉 总结

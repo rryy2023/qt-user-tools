@@ -23,14 +23,11 @@ git push origin main
 
 **手动触发**：
 ```bash
-# 方法 1：使用脚本
-./trigger_windows_build.sh
+# 方法 1：GitHub CLI
+gh workflow run "Build All Platforms"
 
-# 方法 2：GitHub CLI
-gh workflow run "Build Windows EXE"
-
-# 方法 3：GitHub 网页
-# Actions -> Build Windows EXE -> Run workflow
+# 方法 2：GitHub 网页
+# Actions -> Build All Platforms -> Run workflow
 ```
 
 ### 3. 下载产物
@@ -68,19 +65,18 @@ git push origin v0.0.2
 
 ## 📋 文件说明
 
-- `.github/workflows/build-windows.yml` - GitHub Actions 工作流
+- `.github/workflows/build-all-platforms.yml` - 多平台 GitHub Actions 工作流（包含 Windows）
 - `build_windows_ci.py` - CI/CD 打包脚本
-- `trigger_windows_build.sh` - 本地触发脚本
 - `Mac打包Windows指南.md` - 详细文档
 
 ## ⚡ 快速命令
 
 ```bash
 # 触发构建
-./trigger_windows_build.sh
+gh workflow run "Build All Platforms"
 
 # 查看构建状态
-gh run list --workflow="Build Windows EXE"
+gh run list --workflow="Build All Platforms"
 
 # 下载最新构建
 gh run download --name windows-exe
