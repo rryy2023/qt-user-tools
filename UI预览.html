@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>千图网问题解决工具 - UI设计方案预览</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .tab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .tab.active {
+            background: #1890ff;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .ui-preview {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .window-frame {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f5f5f5;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .window-titlebar {
+            background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%);
+            padding: 8px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #d0d0d0;
+        }
+
+        .window-title {
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .window-control {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .control-close { background: #ff5f57; }
+        .control-minimize { background: #ffbd2e; }
+        .control-maximize { background: #28c940; }
+
+        .window-content {
+            background: white;
+            padding: 20px;
+            min-height: 500px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #1890ff;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 20px 0 15px 0;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .problem-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .problem-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        }
+
+        .problem-card h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .problem-card p {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 12px;
+        }
+
+        .btn-fix {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .btn-fix:hover {
+            background: #f0f0f0;
+            transform: scale(1.05);
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .tool-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 20px;
+            background: #f0f0f0;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tool-btn:hover {
+            background: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+
+        .status-bar {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-badge.success {
+            background: #52c41a;
+            color: white;
+        }
+
+        /* 对话框样式 */
+        .dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 600px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .dialog.active {
+            display: block;
+            animation: dialogSlideIn 0.3s;
+        }
+
+        @keyframes dialogSlideIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -60%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        .dialog-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dialog-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .dialog-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .dialog-close:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .dialog-content {
+            padding: 20px;
+        }
+
+        .dialog-section {
+            margin-bottom: 20px;
+        }
+
+        .dialog-section h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .dialog-section p {
+            color: #666;
+            line-height: 1.6;
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 6px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #1890ff, #52c41a);
+            width: 75%;
+            transition: width 0.3s;
+            border-radius: 4px;
+        }
+
+        .dialog-actions {
+            padding: 20px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #1890ff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #40a9ff;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            display: none;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        .comparison-table {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #333;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        .rating {
+            display: flex;
+            gap: 2px;
+        }
+
+        .star {
+            color: #ffc107;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 千图网问题解决工具</h1>
+            <p>UI设计方案可视化预览</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('pyqt')">方案一：PyQt6</button>
+            <button class="tab" onclick="showTab('electron')">方案二：Electron</button>
+            <button class="tab" onclick="showTab('comparison')">方案对比</button>
+        </div>
+
+        <!-- PyQt6 方案 -->
+        <div id="pyqt" class="tab-content active">
+            <div class="ui-preview">
+                <h2 style="margin-bottom: 20px; color: #333;">主界面设计</h2>
+                <div class="window-frame">
+                    <div class="window-titlebar">
+                        <div class="window-title">
+                            🎨 千图网问题解决工具 v1.0
+                        </div>
+                        <div class="window-controls">
+                            <div class="window-control control-close"></div>
+                            <div class="window-control control-minimize"></div>
+                            <div class="window-control control-maximize"></div>
+                        </div>
+                    </div>
+                    <div class="window-content">
+                        <input type="text" class="search-box" placeholder="🔍 搜索问题或输入域名...">
+                        
+                        <div class="section-title">📋 常见问题快速修复</div>
+                        <div class="problem-grid">
+                            <div class="problem-card" onclick="showDialog('preview')">
+                                <h3>🖼️ 预览图问题</h3>
+                                <p>无法显示/加载慢</p>
+                                <button class="btn-fix">一键修复</button>
+                            </div>
+                            <div class="problem-card" onclick="showDialog('style')">
+                                <h3>🎨 样式问题</h3>
+                                <p>页面样式异常</p>
+                                <button class="btn-fix">一键修复</button>
+                            </div>
+                            <div class="problem-card" onclick="showDialog('download')">
+                                <h3>⬇️ 下载问题</h3>
+                                <p>无法访问/失败</p>
+                                <button class="btn-fix">一键修复</button>
+                            </div>
+                            <div class="problem-card" onclick="showDialog('cloud')">
+                                <h3>☁️ 云设计问题</h3>
+                                <p>首页无法访问</p>
+                                <button class="btn-fix">一键修复</button>
+                            </div>
+                            <div class="problem-card" onclick="showDialog('card')">
+                                <h3>📦 卡片加载异常</h3>
+                                <p>显示标签但无内容</p>
+                                <button class="btn-fix">一键修复</button>
+                            </div>
+                            <div class="problem-card" onclick="showDialog('fail')">
+                                <h3>⚠️ 下载失败</h3>
+                                <p>网络错误/中断</p>
+                                <button class="btn-fix">一键修复</button>
+                            </div>
+                        </div>
+
+                        <div class="section-title">🔧 工具箱</div>
+                        <div class="toolbar">
+                            <div class="tool-btn">📋 检查Hosts配置</div>
+                            <div class="tool-btn">🧹 清除浏览器缓存</div>
+                            <div class="tool-btn">🔄 清除DNS缓存</div>
+                            <div class="tool-btn">🌐 检查浏览器版本</div>
+                            <div class="tool-btn">🔍 诊断下载问题</div>
+                        </div>
+
+                        <div class="status-bar">
+                            <div class="status-item">
+                                <span>📊 系统:</span>
+                                <span>macOS 14.0</span>
+                            </div>
+                            <div class="status-item">
+                                <span>权限:</span>
+                                <span class="status-badge success">✓ 已获取</span>
+                            </div>
+                            <div class="status-item">
+                                <span>已绑定域名:</span>
+                                <span>2个</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Electron 方案 -->
+        <div id="electron" class="tab-content">
+            <div class="ui-preview">
+                <h2 style="margin-bottom: 20px; color: #333;">现代化卡片式设计</h2>
+                <div class="window-frame">
+                    <div class="window-titlebar">
+                        <div class="window-title">
+                            🎨 千图网问题解决工具
+                        </div>
+                        <div class="window-controls">
+                            <div class="window-control control-close"></div>
+                            <div class="window-control control-minimize"></div>
+                            <div class="window-control control-maximize"></div>
+                        </div>
+                    </div>
+                    <div class="window-content">
+                        <input type="text" class="search-box" placeholder="🔍 搜索问题...">
+                        
+                        <div class="section-title">⚡ 快速修复</div>
+                        <div class="problem-grid">
+                            <div class="problem-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                <h3>🖼️</h3>
+                                <p>预览图问题</p>
+                                <button class="btn-fix">修复</button>
+                            </div>
+                            <div class="problem-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                <h3>🎨</h3>
+                                <p>样式问题</p>
+                                <button class="btn-fix">修复</button>
+                            </div>
+                            <div class="problem-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                                <h3>⬇️</h3>
+                                <p>下载问题</p>
+                                <button class="btn-fix">修复</button>
+                            </div>
+                            <div class="problem-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                                <h3>☁️</h3>
+                                <p>云设计问题</p>
+                                <button class="btn-fix">修复</button>
+                            </div>
+                            <div class="problem-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                                <h3>📦</h3>
+                                <p>卡片异常</p>
+                                <button class="btn-fix">修复</button>
+                            </div>
+                            <div class="problem-card" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
+                                <h3>⚠️</h3>
+                                <p>下载失败</p>
+                                <button class="btn-fix">修复</button>
+                            </div>
+                        </div>
+
+                        <div class="section-title">🔧 工具箱</div>
+                        <div class="toolbar">
+                            <div class="tool-btn">📋</div>
+                            <div class="tool-btn">🧹</div>
+                            <div class="tool-btn">🔄</div>
+                            <div class="tool-btn">🌐</div>
+                            <div class="tool-btn">🔍</div>
+                        </div>
+
+                        <div class="status-bar">
+                            <div class="status-item">
+                                <span>📊 系统: macOS | 权限: ✓ | 已绑定: 2个域名</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 方案对比 -->
+        <div id="comparison" class="tab-content">
+            <div class="comparison-table">
+                <h2 style="margin-bottom: 20px; color: #333;">方案对比表</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>特性</th>
+                            <th>PyQt6</th>
+                            <th>Electron</th>
+                            <th>Tauri</th>
+                            <th>Web应用</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>应用体积</strong></td>
+                            <td>50-100MB</td>
+                            <td>100-200MB</td>
+                            <td>10-30MB</td>
+                            <td>无需安装</td>
+                        </tr>
+                        <tr>
+                            <td><strong>性能</strong></td>
+                            <td><div class="rating"><span class="star">★★★★★</span></div></td>
+                            <td><div class="rating"><span class="star">★★★</span></div></td>
+                            <td><div class="rating"><span class="star">★★★★</span></div></td>
+                            <td><div class="rating"><span class="star">★★★</span></div></td>
+                        </tr>
+                        <tr>
+                            <td><strong>开发难度</strong></td>
+                            <td><div class="rating"><span class="star">★★★</span></div></td>
+                            <td><div class="rating"><span class="star">★★★★</span></div></td>
+                            <td><div class="rating"><span class="star">★★★★★</span></div></td>
+                            <td><div class="rating"><span class="star">★★★</span></div></td>
+                        </tr>
+                        <tr>
+                            <td><strong>开发周期</strong></td>
+                            <td>3-5天</td>
+                            <td>5-7天</td>
+                            <td>7-10天</td>
+                            <td>3-5天</td>
+                        </tr>
+                        <tr>
+                            <td><strong>UI美观度</strong></td>
+                            <td><div class="rating"><span class="star">★★★★</span></div></td>
+                            <td><div class="rating"><span class="star">★★★★★</span></div></td>
+                            <td><div class="rating"><span class="star">★★★★★</span></div></td>
+                            <td><div class="rating"><span class="star">★★★★★</span></div></td>
+                        </tr>
+                        <tr>
+                            <td><strong>代码复用</strong></td>
+                            <td>⭐⭐⭐ 完全复用</td>
+                            <td>⭐ 部分复用</td>
+                            <td>❌ 需重写</td>
+                            <td>⭐⭐ 大部分复用</td>
+                        </tr>
+                        <tr>
+                            <td><strong>用户体验</strong></td>
+                            <td><div class="rating"><span class="star">★★★★★</span></div></td>
+                            <td><div class="rating"><span class="star">★★★★</span></div></td>
+                            <td><div class="rating"><span class="star">★★★★★</span></div></td>
+                            <td><div class="rating"><span class="star">★★★</span></div></td>
+                        </tr>
+                        <tr>
+                            <td><strong>跨平台</strong></td>
+                            <td>✅</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="margin-top: 30px; padding: 20px; background: #f0f7ff; border-radius: 8px; border-left: 4px solid #1890ff;">
+                    <h3 style="color: #1890ff; margin-bottom: 10px;">🏆 推荐方案：PyQt6</h3>
+                    <p style="color: #666; line-height: 1.8;">
+                        <strong>理由：</strong><br>
+                        ✅ 可完全复用现有Python代码，开发效率最高<br>
+                        ✅ 原生体验好，性能优秀<br>
+                        ✅ 开发周期短，3-5天即可完成<br>
+                        ✅ 打包后用户无需安装Python环境<br>
+                        ✅ 界面可以做得非常美观
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 对话框 -->
+    <div class="overlay" id="overlay" onclick="hideDialog()"></div>
+    <div class="dialog" id="dialog">
+        <div class="dialog-header">
+            <div class="dialog-title" id="dialog-title">修复问题</div>
+            <button class="dialog-close" onclick="hideDialog()">×</button>
+        </div>
+        <div class="dialog-content">
+            <div class="dialog-section">
+                <h3>📋 问题描述</h3>
+                <p id="dialog-description">问题描述内容</p>
+            </div>
+            <div class="dialog-section">
+                <h3>🔧 解决方案</h3>
+                <p id="dialog-solution">解决方案内容</p>
+            </div>
+            <div class="dialog-section">
+                <h3>🌐 正在获取IP地址...</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress"></div>
+                </div>
+                <p id="dialog-ip" style="color: #52c41a; font-weight: 600;">✓ 已获取IP地址: 124.166.238.87</p>
+            </div>
+            <div class="dialog-section">
+                <h3>⚠️ 重要提示</h3>
+                <p>• 此操作需要管理员权限<br>
+                   • 将自动备份当前hosts文件<br>
+                   • 修复后需要刷新浏览器才能生效</p>
+            </div>
+        </div>
+        <div class="dialog-actions">
+            <button class="btn btn-secondary" onclick="hideDialog()">预览修改</button>
+            <button class="btn btn-primary" onclick="startFix()">立即修复</button>
+            <button class="btn btn-secondary" onclick="hideDialog()">取消</button>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // 隐藏所有标签内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 移除所有标签的active类
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 显示选中的标签内容
+            document.getElementById(tabName).classList.add('active');
+            
+            // 添加active类到对应的标签按钮
+            event.target.classList.add('active');
+        }
+
+        const problemData = {
+            preview: {
+                title: '修复问题: 主站卡片预览图无法显示、加载慢',
+                description: '主站卡片预览图无法显示或加载缓慢，影响用户体验。通常是由于CDN节点访问异常导致的。',
+                solution: '需要绑定域名: preview.qiantucdn.com 到最优IP地址，以加速访问。'
+            },
+            style: {
+                title: '修复问题: 下载页面样式乱了',
+                description: '下载页面样式显示异常，页面布局混乱，影响正常使用。',
+                solution: '需要绑定域名: js.qiantucdn.com 以加载正确的样式文件。'
+            },
+            download: {
+                title: '修复问题: 下载页面显示无法访问网站',
+                description: '点击下载素材后，页面显示无法访问网站的错误提示。',
+                solution: '需要绑定域名: dl.58pic.com 到IP地址 47.104.5.133。'
+            },
+            cloud: {
+                title: '修复问题: 云设计首页显示无法访问',
+                description: '云设计首页无法正常打开，显示访问错误。',
+                solution: '需要绑定域名: y.58pic.com 到IP地址 118.190.104.146。'
+            },
+            card: {
+                title: '修复问题: 千图首页面卡片无法加载但显示标签',
+                description: '首页卡片区域显示标签文字，但图片内容无法加载。',
+                solution: '需要解绑 preview.qiantucdn.com 域名。'
+            },
+            fail: {
+                title: '修复问题: 下载失败-网络错误、下载中断',
+                description: '素材下载时出现网络错误或下载中断的问题。',
+                solution: '需要绑定下载代理域名: proxy-rar.58pic.com, proxy-vip.58pic.com, proxy-vd.58pic.com'
+            }
+        };
+
+        function showDialog(problemType) {
+            const data = problemData[problemType];
+            document.getElementById('dialog-title').textContent = data.title;
+            document.getElementById('dialog-description').textContent = data.description;
+            document.getElementById('dialog-solution').textContent = data.solution;
+            
+            document.getElementById('overlay').classList.add('active');
+            document.getElementById('dialog').classList.add('active');
+            
+            // 模拟进度
+            let progress = 0;
+            const progressBar = document.getElementById('progress');
+            const interval = setInterval(() => {
+                progress += 10;
+                progressBar.style.width = progress + '%';
+                if (progress >= 100) {
+                    clearInterval(interval);
+                }
+            }, 200);
+        }
+
+        function hideDialog() {
+            document.getElementById('overlay').classList.remove('active');
+            document.getElementById('dialog').classList.remove('active');
+            document.getElementById('progress').style.width = '0%';
+        }
+
+        function startFix() {
+            alert('修复功能演示\n\n在实际应用中，这里会：\n1. 备份hosts文件\n2. 修改hosts文件\n3. 清除DNS缓存\n4. 显示成功提示');
+            hideDialog();
+        }
+
+        // 点击卡片时显示对话框
+        document.querySelectorAll('.problem-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                if (e.target.classList.contains('btn-fix')) {
+                    const problemType = this.getAttribute('onclick')?.match(/'(\w+)'/)?.[1];
+                    if (problemType) {
+                        showDialog(problemType);
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

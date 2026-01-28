@@ -1,0 +1,236 @@
+/* 千图网问题解决工具 - 现代化扁平风格样式表 */
+
+/* 全局样式 */
+QMainWindow {
+    background-color: #ffffff;
+}
+
+QWidget {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+    font-size: 13px;
+}
+
+/* 按钮样式 */
+QPushButton {
+    background-color: #1890ff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-weight: 500;
+    min-height: 32px;
+}
+
+QPushButton:hover {
+    background-color: #40a9ff;
+}
+
+QPushButton:pressed {
+    background-color: #096dd9;
+}
+
+QPushButton:disabled {
+    background-color: #d9d9d9;
+    color: #bfbfbf;
+}
+
+/* 次要按钮 */
+QPushButton[class="secondary"] {
+    background-color: #f0f0f0;
+    color: #333;
+    border: 2px solid #e0e0e0;
+}
+
+QPushButton[class="secondary"]:hover {
+    background-color: #e0e0e0;
+    border-color: #d0d0d0;
+}
+
+/* 危险按钮 */
+QPushButton[class="danger"] {
+    background-color: #ff4d4f;
+}
+
+QPushButton[class="danger"]:hover {
+    background-color: #ff7875;
+}
+
+/* 输入框样式 */
+QLineEdit {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: white;
+    font-size: 14px;
+}
+
+QLineEdit:focus {
+    border-color: #1890ff;
+}
+
+QLineEdit:disabled {
+    background-color: #f5f5f5;
+    color: #bfbfbf;
+}
+
+/* 文本编辑框 */
+QTextEdit {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: white;
+}
+
+QTextEdit:focus {
+    border-color: #1890ff;
+}
+
+QTextEdit:read-only {
+    background-color: #f5f5f5;
+}
+
+/* 进度条 */
+QProgressBar {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    text-align: center;
+    height: 25px;
+    background-color: #f5f5f5;
+}
+
+QProgressBar::chunk {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #1890ff, stop:1 #52c41a);
+    border-radius: 6px;
+}
+
+/* 表格样式 */
+QTableWidget {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: white;
+    gridline-color: #f0f0f0;
+    selection-background-color: #e6f7ff;
+    selection-color: #1890ff;
+}
+
+QTableWidget::item {
+    padding: 8px;
+}
+
+QTableWidget::item:selected {
+    background-color: #e6f7ff;
+    color: #1890ff;
+}
+
+QHeaderView::section {
+    background-color: #fafafa;
+    border: none;
+    border-bottom: 2px solid #e0e0e0;
+    padding: 8px;
+    font-weight: 600;
+}
+
+/* 标签页 */
+QTabWidget::pane {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: white;
+    top: -1px;
+}
+
+QTabBar::tab {
+    background-color: #f5f5f5;
+    color: #666;
+    border: 1px solid #e0e0e0;
+    border-bottom: none;
+    padding: 10px 20px;
+    margin-right: 2px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+QTabBar::tab:selected {
+    background-color: white;
+    color: #1890ff;
+    border-bottom: 2px solid #1890ff;
+    font-weight: 600;
+}
+
+QTabBar::tab:hover {
+    background-color: #fafafa;
+}
+
+/* 对话框 */
+QDialog {
+    background-color: white;
+}
+
+/* 消息框 */
+QMessageBox {
+    background-color: white;
+}
+
+QMessageBox QPushButton {
+    min-width: 80px;
+}
+
+/* 状态栏 */
+QStatusBar {
+    background-color: #f5f5f5;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* 滚动条 */
+QScrollBar:vertical {
+    border: none;
+    background-color: #f5f5f5;
+    width: 12px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #d9d9d9;
+    border-radius: 6px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #bfbfbf;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    border: none;
+    background-color: #f5f5f5;
+    height: 12px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #d9d9d9;
+    border-radius: 6px;
+    min-width: 20px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #bfbfbf;
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
+/* 工具提示 */
+QToolTip {
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+}
