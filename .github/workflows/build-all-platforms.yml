@@ -99,48 +99,48 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Install system dependencies
+      - name: Check and configure system gettext
         run: |
-          brew install gettext || true
-          # 查找 gettext 库的实际路径（尝试多个可能的位置）
-          GETTEXT_PATH=""
-          for path in "$(brew --prefix gettext 2>/dev/null)" "/opt/homebrew/opt/gettext" "/usr/local/opt/gettext"; do
-            if [ -n "$path" ] && [ -d "$path/lib" ] && [ -f "$path/lib/libintl.8.dylib" ] || [ -f "$path/lib/libintl.dylib" ]; then
-              GETTEXT_PATH="$path"
-              break
-            fi
-          done
+          # 检查系统自带的 gettext（macOS 通常自带，且是通用二进制）
+          echo "Checking for system gettext..."
           
-          if [ -z "$GETTEXT_PATH" ]; then
-            # 如果找不到，尝试查找任何包含 libintl 的路径
-            GETTEXT_PATH=$(find /opt/homebrew /usr/local -name "libintl*.dylib" 2>/dev/null | head -1 | xargs dirname | xargs dirname | xargs dirname || echo "")
+          # macOS 系统通常自带 libintl，检查架构
+          if [ -f "/usr/lib/libintl.dylib" ]; then
+            echo "Found system libintl.dylib:"
+            file /usr/lib/libintl.dylib || true
+            lipo -info /usr/lib/libintl.dylib 2>/dev/null || true
+            echo "Will use system libintl.dylib"
+            echo "USE_SYSTEM_GETTEXT=true" >> $GITHUB_ENV
+            # 立即设置环境变量，让后续步骤都能使用
+            echo "DYLD_LIBRARY_PATH=/usr/lib:$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
+          else
+            echo "System libintl.dylib not found, will try without gettext"
+            echo "USE_SYSTEM_GETTEXT=false" >> $GITHUB_ENV
           fi
           
-          if [ -z "$GETTEXT_PATH" ]; then
-            echo "Warning: Could not find gettext library path"
-            GETTEXT_PATH="/usr/local/opt/gettext"
-          fi
-          
-          echo "GETTEXT_PATH=$GETTEXT_PATH" >> $GITHUB_ENV
-          echo "Found gettext at: $GETTEXT_PATH"
-          ls -la "$GETTEXT_PATH/lib/"*intl* 2>/dev/null || echo "No libintl found in $GETTEXT_PATH/lib/"
-          
-          # 设置环境变量
-          if [ -d "$GETTEXT_PATH/lib" ]; then
-            echo "DYLD_LIBRARY_PATH=$GETTEXT_PATH/lib:$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
-          fi
-          
-          # 创建符号链接（如果需要，但可能没有权限）
-          if [ ! -f "/usr/local/opt/gettext/lib/libintl.8.dylib" ] && [ -f "$GETTEXT_PATH/lib/libintl.8.dylib" ]; then
-            sudo mkdir -p /usr/local/opt/gettext/lib 2>/dev/null || true
-            sudo ln -sf "$GETTEXT_PATH/lib/libintl.8.dylib" /usr/local/opt/gettext/lib/libintl.8.dylib 2>/dev/null || true
-          fi
+          # 确保环境变量在后续步骤中可用
+          echo "Environment configured for x86_64 Python"
       
       - name: Set up Python (x86_64)
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
           architecture: 'x64'  # 使用 x64 架构（Intel）
+      
+      - name: Configure environment for x86_64 Python
+        env:
+          USE_SYSTEM_GETTEXT: ${{ env.USE_SYSTEM_GETTEXT }}
+        run: |
+          # 在 Python 设置后立即设置环境变量，确保 Python 能找到系统库
+          if [ "$USE_SYSTEM_GETTEXT" = "true" ]; then
+            export DYLD_LIBRARY_PATH="/usr/lib:$DYLD_LIBRARY_PATH"
+            echo "DYLD_LIBRARY_PATH=/usr/lib:$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
+            echo "Configured to use system libintl.dylib"
+          fi
+          
+          # 验证 Python 架构
+          echo "Python architecture:"
+          python -c "import platform; print(platform.machine())" || echo "Python check failed"
       
       - name: Cache pip packages
         uses: actions/cache@v4
@@ -152,33 +152,42 @@ jobs:
       
       - name: Install dependencies
         env:
-          DYLD_LIBRARY_PATH: ${{ env.DYLD_LIBRARY_PATH }}
-          GETTEXT_PATH: ${{ env.GETTEXT_PATH }}
+          USE_SYSTEM_GETTEXT: ${{ env.USE_SYSTEM_GETTEXT }}
         run: |
-          # 设置库路径
-          if [ -n "$GETTEXT_PATH" ]; then
-            export DYLD_LIBRARY_PATH="$GETTEXT_PATH/lib:$DYLD_LIBRARY_PATH"
-            export PATH="$GETTEXT_PATH/bin:$PATH"
-            export LDFLAGS="-L$GETTEXT_PATH/lib $LDFLAGS"
-            export CPPFLAGS="-I$GETTEXT_PATH/include $CPPFLAGS"
+          # 设置库路径（使用系统自带的 gettext）
+          if [ "$USE_SYSTEM_GETTEXT" = "true" ]; then
+            export DYLD_LIBRARY_PATH="/usr/lib:$DYLD_LIBRARY_PATH"
+            echo "Using system libintl.dylib"
           fi
+          
+          # 验证 Python 架构
+          echo "Python architecture:"
+          python -c "import platform; print(platform.machine())"
+          file $(which python) || python -c "import sys; print(sys.executable)"
+          
+          # 测试 Python 是否能正常导入（不依赖 gettext）
+          echo "Testing Python import..."
+          python -c "import sys; print('Python OK')" || {
+            echo "Python import failed, may need gettext"
+            # 如果失败，尝试安装 gettext（但通常不会失败）
+            exit 1
+          }
+          
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
       
       - name: Build macOS Intel
         env:
-          DYLD_LIBRARY_PATH: ${{ env.DYLD_LIBRARY_PATH }}
-          GETTEXT_PATH: ${{ env.GETTEXT_PATH }}
+          USE_SYSTEM_GETTEXT: ${{ env.USE_SYSTEM_GETTEXT }}
         run: |
           chmod +x build_all_platforms.sh
-          # 设置库路径
-          if [ -n "$GETTEXT_PATH" ]; then
-            export PATH="$GETTEXT_PATH/bin:$PATH"
-            export LDFLAGS="-L$GETTEXT_PATH/lib $LDFLAGS"
-            export CPPFLAGS="-I$GETTEXT_PATH/include $CPPFLAGS"
-            export DYLD_LIBRARY_PATH="$GETTEXT_PATH/lib:$DYLD_LIBRARY_PATH"
+          # 设置库路径（使用系统自带的 gettext）
+          if [ "$USE_SYSTEM_GETTEXT" = "true" ]; then
+            export DYLD_LIBRARY_PATH="/usr/lib:$DYLD_LIBRARY_PATH"
+            echo "Using system libintl.dylib"
           fi
+          
           # 显示详细输出以便调试
           set -x
           ./build_all_platforms.sh --mac-intel || {
