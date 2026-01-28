@@ -36,6 +36,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-arm64-pip-
       
+      - name: Install system dependencies
+        run: |
+          brew install gettext || true
+      
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -45,16 +49,33 @@ jobs:
       - name: Build macOS ARM64
         run: |
           chmod +x build_all_platforms.sh
-          ./build_all_platforms.sh --mac-arm64
+          ./build_all_platforms.sh --mac-arm64 || exit 1
+      
+      - name: Verify build output
+        run: |
+          if [ ! -d "dist/mac_arm64" ]; then
+            echo "Error: dist/mac_arm64 directory not found"
+            exit 1
+          fi
+          ls -la dist/mac_arm64/ || exit 1
+          # 检查是否有构建产物
+          if [ -d "dist/mac_arm64/千图网问题解决工具.app" ] || \
+             [ -n "$(find dist/mac_arm64 -name '*.app' -o -name '*.dmg' -o -name '*.zip' 2>/dev/null)" ]; then
+            echo "✓ Build artifacts found"
+            find dist/mac_arm64 -type f -o -type d | head -10
+          else
+            echo "Error: No build artifacts found in dist/mac_arm64/"
+            exit 1
+          fi
       
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
+        if: always()  # 即使构建失败也上传（用于调试）
         with:
           name: macos-arm64
           path: |
-            dist/mac_arm64/*.app
-            dist/mac_arm64/*.dmg
-            dist/mac_arm64/*.zip
+            dist/mac_arm64/**/*
+          if-no-files-found: warn  # 如果没有文件，只警告不失败
           retention-days: 30
 
   build-macos-intel:
@@ -79,6 +100,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-intel-pip-
       
+      - name: Install system dependencies
+        run: |
+          brew install gettext || true
+          # 确保 gettext 库可用
+          export PATH="/usr/local/opt/gettext/bin:$PATH"
+          export LDFLAGS="-L/usr/local/opt/gettext/lib $LDFLAGS"
+          export CPPFLAGS="-I/usr/local/opt/gettext/include $CPPFLAGS"
+      
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -88,16 +117,36 @@ jobs:
       - name: Build macOS Intel
         run: |
           chmod +x build_all_platforms.sh
-          ./build_all_platforms.sh --mac-intel
+          export PATH="/usr/local/opt/gettext/bin:$PATH"
+          export LDFLAGS="-L/usr/local/opt/gettext/lib $LDFLAGS"
+          export CPPFLAGS="-I/usr/local/opt/gettext/include $CPPFLAGS"
+          ./build_all_platforms.sh --mac-intel || exit 1
+      
+      - name: Verify build output
+        run: |
+          if [ ! -d "dist/mac_intel" ]; then
+            echo "Error: dist/mac_intel directory not found"
+            exit 1
+          fi
+          ls -la dist/mac_intel/ || exit 1
+          # 检查是否有构建产物
+          if [ -d "dist/mac_intel/千图网问题解决工具.app" ] || \
+             [ -n "$(find dist/mac_intel -name '*.app' -o -name '*.dmg' -o -name '*.zip' 2>/dev/null)" ]; then
+            echo "✓ Build artifacts found"
+            find dist/mac_intel -type f -o -type d | head -10
+          else
+            echo "Error: No build artifacts found in dist/mac_intel/"
+            exit 1
+          fi
       
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
+        if: always()  # 即使构建失败也上传（用于调试）
         with:
           name: macos-intel
           path: |
-            dist/mac_intel/*.app
-            dist/mac_intel/*.dmg
-            dist/mac_intel/*.zip
+            dist/mac_intel/**/*
+          if-no-files-found: warn  # 如果没有文件，只警告不失败
           retention-days: 30
 
   build-windows:
@@ -130,15 +179,32 @@ jobs:
       
       - name: Build Windows EXE
         run: |
-          python build_windows.py
+          python build_windows.py || exit 1
+      
+      - name: Verify build output
+        run: |
+          if [ ! -d "dist/windows" ]; then
+            echo "Error: dist/windows directory not found"
+            exit 1
+          fi
+          ls -la dist/windows/ || exit 1
+          # 检查是否有构建产物
+          if [ -n "$(find dist/windows -name '*.exe' -o -name '*.zip' 2>/dev/null)" ]; then
+            echo "✓ Build artifacts found"
+            find dist/windows -type f | head -10
+          else
+            echo "Error: No build artifacts found in dist/windows/"
+            exit 1
+          fi
       
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
+        if: always()  # 即使构建失败也上传（用于调试）
         with:
           name: windows-exe
           path: |
-            dist/windows/*.exe
-            dist/windows/*.zip
+            dist/windows/**/*
+          if-no-files-found: warn  # 如果没有文件，只警告不失败
           retention-days: 30
 
   create-release:

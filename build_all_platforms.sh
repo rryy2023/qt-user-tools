@@ -207,11 +207,14 @@ build_mac_arm64() {
     
     # 使用 PyInstaller 打包
     echo -e "${BLUE}正在打包...${NC}"
-    $PYTHON_BIN -m PyInstaller build_app.spec \
+    if ! $PYTHON_BIN -m PyInstaller build_app.spec \
         --workpath "$BUILD_SUBDIR" \
         --distpath "$DIST_DIR/mac_arm64" \
         --clean \
-        --noconfirm
+        --noconfirm; then
+        echo -e "${RED}✗ PyInstaller 打包失败${NC}"
+        return 1
+    fi
     
     # 检查结果
     if [ -d "$DIST_DIR/mac_arm64/$APP_NAME.app" ]; then
@@ -346,11 +349,14 @@ build_mac_intel() {
     
     # 使用 PyInstaller 打包
     echo -e "${BLUE}正在打包...${NC}"
-    $PYTHON_BIN -m PyInstaller build_app.spec \
+    if ! $PYTHON_BIN -m PyInstaller build_app.spec \
         --workpath "$BUILD_SUBDIR" \
         --distpath "$DIST_DIR/mac_intel" \
         --clean \
-        --noconfirm
+        --noconfirm; then
+        echo -e "${RED}✗ PyInstaller 打包失败${NC}"
+        return 1
+    fi
     
     # 检查结果
     if [ -d "$DIST_DIR/mac_intel/$APP_NAME.app" ]; then

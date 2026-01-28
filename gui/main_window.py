@@ -72,6 +72,7 @@ class MainWindow(QMainWindow):
     
     def __init__(self):
         super().__init__()
+        self.hosts_worker = None  # 保存线程引用，用于清理
         self.init_ui()
         # 延迟更新状态栏，让窗口先显示，提升启动速度
         # 分阶段更新：先显示窗口，再异步更新状态
@@ -247,9 +248,21 @@ class MainWindow(QMainWindow):
     def update_status_async(self):
         """异步更新状态栏（后台线程执行，不阻塞UI）"""
         # 使用后台线程检查hosts，避免阻塞UI
-        worker = HostsCheckWorker()
-        worker.result_ready.connect(self.on_hosts_check_result)
-        worker.start()
+        # 如果之前的线程还在运行，先清理
+        if self.hosts_worker and self.hosts_worker.isRunning():
+            self.hosts_worker.quit()
+            self.hosts_worker.wait(1000)  # 等待最多1秒
+        
+        self.hosts_worker = HostsCheckWorker()
+        self.hosts_worker.result_ready.connect(self.on_hosts_check_result)
+        self.hosts_worker.finished.connect(self.on_hosts_worker_finished)  # 线程完成时清理
+        self.hosts_worker.start()
+    
+    def on_hosts_worker_finished(self):
+        """线程完成时的清理"""
+        if self.hosts_worker:
+            self.hosts_worker.deleteLater()
+            self.hosts_worker = None
     
     def on_hosts_check_result(self, count: int):
         """接收hosts检查结果"""
@@ -274,20 +287,58 @@ class MainWindow(QMainWindow):
         msg.setWindowTitle(title)
         msg.setText(message)
         msg.exec()
+    
+    def closeEvent(self, event):
+        """窗口关闭事件：确保线程正确清理"""
+        # 如果有后台线程在运行，等待其完成
+        if self.hosts_worker and self.hosts_worker.isRunning():
+            # 请求线程退出
+            self.hosts_worker.quit()
+            # 等待线程完成（最多等待2秒）
+            if not self.hosts_worker.wait(2000):
+                # 如果2秒内没有完成，强制终止（不推荐，但避免程序卡死）
+                self.hosts_worker.terminate()
+                self.hosts_worker.wait(1000)
+            # 清理线程对象
+            self.hosts_worker.deleteLater()
+            self.hosts_worker = None
+        
+        # 接受关闭事件
+        event.accept()
 
 
 class HostsCheckWorker(QThread):
     """后台线程：检查hosts绑定（不阻塞主线程）"""
     result_ready = pyqtSignal(int)  # 传递绑定数量，-1表示错误
     
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._stop_requested = False
+    
+    def stop(self):
+        """请求停止线程"""
+        self._stop_requested = True
+    
     def run(self):
         """在后台线程中执行"""
         try:
+            if self._stop_requested:
+                return
+            
             sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
             from hosts.check_hosts import check_hosts
+            
+            if self._stop_requested:
+                return
+            
             bindings = check_hosts()
+            
+            if self._stop_requested:
+                return
+            
             count = len(bindings)
             self.result_ready.emit(count)
         except Exception as e:
-            print(f"hosts检查失败: {e}")  # 不阻塞，只打印日志
-            self.result_ready.emit(-1)
+            if not self._stop_requested:
+                print(f"hosts检查失败: {e}")  # 不阻塞，只打印日志
+                self.result_ready.emit(-1)

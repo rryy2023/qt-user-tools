@@ -136,19 +136,29 @@ exe = EXE(
            '--distpath', dist_dir,
            '--clean', '--noconfirm']
     try:
-        result = subprocess.run(cmd, check=True)
-        result = 0
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        # 打印输出以便调试
+        if result.stdout:
+            print(result.stdout)
+        if result.stderr:
+            print(result.stderr)
+        result_code = 0
     except subprocess.CalledProcessError as e:
-        result = e.returncode
+        print(f"\n✗ PyInstaller 执行失败 (退出码: {e.returncode})")
+        if e.stdout:
+            print(f"标准输出:\n{e.stdout}")
+        if e.stderr:
+            print(f"错误输出:\n{e.stderr}")
+        result_code = e.returncode
     except FileNotFoundError:
         print("\n✗ PyInstaller not found. Please install it with: pip install pyinstaller")
-        result = 1
+        result_code = 1
     
     # 清理临时文件
     if os.path.exists(spec_file):
         os.remove(spec_file)
     
-    if result != 0:
+    if result_code != 0:
         print("\n✗ 打包失败")
         sys.exit(1)
     
